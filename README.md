@@ -18,7 +18,7 @@ This is a REST API for a event management system built using Django REST Framewo
 | EndPoints             | Descriptions                                                               |
 | ----------------- | ------------------------------------------------------------------ |
 | roles/    |   Views Roles that are used for access control    |
-| signup/   |  Sign up new user |
+| register/   |  Sign up new user |
 | login/ | Login user and retrieve Django Auth token|
 | logout/ | Logout user |
 | Events/ | Retrieve list of events, search using ?search=, filter using ?category= |
