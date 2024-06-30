@@ -45,12 +45,12 @@ class Events(models.Model):
     description = models.TextField()
     category = models.ForeignKey(Category,on_delete=models.SET_NULL,null=True)
     organizer_name = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,limit_choices_to={'groups__name': "Event Clients"})
-    start_date = models.DateTimeField()
-    end_date = models.DateField()
-    end_time = models.TimeField()
+    start_date = models.DateTimeField(blank=True,null=True)
+    end_time = models.DateTimeField(blank=True,null=True)
     venue = models.ForeignKey(Venue,on_delete=models.SET_NULL,null=True)
     status = models.PositiveSmallIntegerField(choices=STATUS, default=1)
-    cost = models.IntegerField()
+    venue_cost = models.DecimalField(max_digits=8,decimal_places=2,blank=True,null=True)
+    Food_cost_per_person = models.DecimalField(max_digits=8,decimal_places=2,blank=True,null=True)
     filterset_fields = ['category__name','category']
     search_fields = ['name']
 
@@ -64,7 +64,7 @@ class Attendees(models.Model):
     name = models.CharField(max_length=300)
     contact = models.IntegerField(null=True)
     email = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,limit_choices_to={'groups__name': "Attendees"})
-    event = models.ForeignKey(Events,on_delete=models.SET_NULL,null=True)
+    event = models.ForeignKey(Events,on_delete=models.SET_NULL,null=True,related_name='attendees')
 
     class Meta:
         verbose_name_plural = 'Attendees'
@@ -99,30 +99,34 @@ class Tickets(models.Model):
     ticket_no = models.CharField(max_length=300)
     event = models.ForeignKey(Events,on_delete=models.SET_NULL,null=True) 
     attendee = models.ForeignKey(Attendees,on_delete=models.SET_NULL,blank=True,null=True)
-    booking_name = models.ForeignKey(Reservation,on_delete=models.CASCADE,blank=True,null=True)
-    payment_status = models.BooleanField()
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2,blank=True,null=True)
+    payment_date = models.DateField(blank=True, null=True)
+    payment_method = models.CharField(max_length=200,blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Tickets'
 
     def __str__(self):
-        if self.attendee == None:
-            return f'{self.ticket_no},{self.booking_name}'
-        elif self.booking_name == None:
-            return f'{self.ticket_no},{self.attendee}{' --> '}{self.event}'
+        return f'{self.ticket_no}'
+
+    # def __str__(self):
+    #     if self.attendee == None:
+    #         return f'{self.ticket_no},{self.booking_name}'
+    #     elif self.booking_name == None:
+    #         return f'{self.ticket_no},{self.attendee}{' --> '}{self.event}'
        
-class Payment(models.Model):
-    ticket_no = models.ForeignKey(Tickets,on_delete=models.SET_NULL,null=True)
-    transaction_no = models.CharField(max_length=300)
-    payment_amount = models.IntegerField()
-    payment_date = models.DateField()
-    payment_method = models.CharField(max_length=200)
+# class Payment(models.Model):
+#     ticket_no = models.ForeignKey(Tickets,on_delete=models.SET_NULL,null=True)
+#     transaction_no = models.CharField(max_length=300)
+#     payment_amount = models.IntegerField()
+#     payment_date = models.DateField()
+#     payment_method = models.CharField(max_length=200)
 
-    class Meta:
-        verbose_name_plural = 'Payments'
+#     class Meta:
+#         verbose_name_plural = 'Payments'
 
-    def __str__(self):
-        return self.transaction_no
+#     def __str__(self):
+#         return self.transaction_no
     
 class Reviews(models.Model):
         reviewer = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,limit_choices_to={'groups__name': "Attendees"})
@@ -134,3 +138,4 @@ class Reviews(models.Model):
 
         def __str__(self):
             return f'{self.event}'
+        

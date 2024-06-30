@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserApiView,GroupListing, Login, Logout, Register, ReviewApiView,EventApiView,AttendeeApiView,CategoryApiView,VenueApiView,VendorApiView,ReservationApiView,TicketApiView,PaymentApiView
+from .views import UserApiView,GroupListing, Login, Logout, Register, ReviewApiView,EventApiView,AttendeeApiView,CategoryApiView,VenueApiView,VendorApiView,ReservationApiView,TicketApiView, EventCost,PaymentView
 from logistics.views import CateringApiView,TransportApiView,EquipmentApiView
 urlpatterns = [
     path('users/',UserApiView.as_view({'get':'list'})),
@@ -21,8 +21,6 @@ urlpatterns = [
     path('reservation/<int:pk>',ReservationApiView.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}),name='reservation_details'),
     path('ticket/',TicketApiView.as_view({'get':'list','post':'create'}),name='ticket'),
     path('ticket/<int:pk>',TicketApiView.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}),name='ticket_details'),
-    path('payment/',PaymentApiView.as_view({'get':'list','post':'create'}),name='payment'),
-    path('payment/<int:pk>',PaymentApiView.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}),name='payment_details'),
     path('feedback/',ReviewApiView.as_view({'get':'list','post':'create'}),name='feedback'),
     path('feedback/<int:pk>',ReviewApiView.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}),name='feedback_details'),
 
@@ -33,5 +31,6 @@ urlpatterns = [
     path('equipment/',EquipmentApiView.as_view({'get':'list','post':'create'}),name='equipment'),
     path('equipment/<int:pk>',EquipmentApiView.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}),name='equipment_details'),
 
-    
+    path('eventcost/<int:event_id>',EventCost),
+    path('process_payment/', PaymentView.as_view(), name='process_payment'),
 ]
