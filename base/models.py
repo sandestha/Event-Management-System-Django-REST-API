@@ -51,8 +51,7 @@ class Events(models.Model):
     status = models.PositiveSmallIntegerField(choices=STATUS, default=1)
     venue_cost = models.DecimalField(max_digits=8,decimal_places=2,blank=True,null=True)
     Food_cost_per_person = models.DecimalField(max_digits=8,decimal_places=2,blank=True,null=True)
-    filterset_fields = ['category__name','category']
-    search_fields = ['name']
+    
 
     class Meta:
         verbose_name_plural = 'Events'
@@ -96,9 +95,9 @@ class Reservation(models.Model):
         return f'{self.booking_name}{' --> '}{self.event}'
     
 class Tickets(models.Model):
-    ticket_no = models.CharField(max_length=300)
-    event = models.ForeignKey(Events,on_delete=models.SET_NULL,null=True) 
-    attendee = models.ForeignKey(Attendees,on_delete=models.SET_NULL,blank=True,null=True)
+    ticket_no = models.CharField(max_length=300,blank=True, null=True)
+    event = models.ForeignKey(Events,on_delete=models.SET_NULL,null=True,related_name='tickets') 
+    attendee = models.ForeignKey(Attendees,on_delete=models.SET_NULL,blank=True,null=True,related_name='tickets')
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2,blank=True,null=True)
     payment_date = models.DateField(blank=True, null=True)
     payment_method = models.CharField(max_length=200,blank=True, null=True)

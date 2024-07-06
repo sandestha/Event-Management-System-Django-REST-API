@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserApiView,GroupListing, Login, Logout, Register, ReviewApiView,EventApiView,AttendeeApiView,CategoryApiView,VenueApiView,VendorApiView,ReservationApiView,TicketApiView, EventCost,PaymentView
+from .views import UserApiView,GroupListing, Login, Logout, Register, ReviewApiView,EventApiView,AttendeeApiView,CategoryApiView,VenueApiView,VendorApiView,ReservationApiView,TicketApiView, RevenueReport,PaymentView
 from logistics.views import CateringApiView,TransportApiView,EquipmentApiView
 urlpatterns = [
     path('users/',UserApiView.as_view({'get':'list'})),
@@ -31,6 +31,6 @@ urlpatterns = [
     path('equipment/',EquipmentApiView.as_view({'get':'list','post':'create'}),name='equipment'),
     path('equipment/<int:pk>',EquipmentApiView.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}),name='equipment_details'),
 
-    path('eventcost/<int:event_id>',EventCost),
+    path('revenuereport/<int:event_id>',RevenueReport,name='revenue_report'),
     path('process_payment/', PaymentView.as_view(), name='process_payment'),
 ]

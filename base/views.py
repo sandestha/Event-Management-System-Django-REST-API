@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
+from django.shortcuts import get_object_or_404
 
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import AllowAny,DjangoModelPermissions,IsAuthenticated
@@ -16,6 +17,9 @@ from logistics.models import Catering,Equipment,Transportation
 from .serializers import GroupSerializers, UserSerializers, CategorySerializers, VendorSerializers, EventSerializers, VenueSerializers,AttendeeSerializers, ReservationSerializers, TicketSerializers, ReviewSerializers
 from django.conf import settings
 import stripe
+import requests
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # Create your views here.
 @api_view(['POST'])
@@ -69,27 +73,31 @@ class CategoryApiView(ModelViewSet):
 class VenueApiView(ModelViewSet):
     queryset = Venue.objects.all()
     serializer_class = VenueSerializers
+    permission_classes = [IsAuthenticated,DjangoModelPermissions]
 
 class EventApiView(ModelViewSet):
     queryset = Events.objects.all()
     serializer_class = EventSerializers
     permission_classes = [IsAuthenticated,DjangoModelPermissions]
+    filterset_fields = ['category__name','category']
+    search_fields = ['name']
 
 class VendorApiView(ModelViewSet):
     queryset = Vendors.objects.all()
-    serializer_class = VendorSerializers 
+    serializer_class = VendorSerializers
+    permission_classes = [IsAuthenticated,DjangoModelPermissions]
 
 class AttendeeApiView(ModelViewSet):
     queryset = Attendees.objects.all()
     serializer_class = AttendeeSerializers
+    permission_classes = [IsAuthenticated,DjangoModelPermissions]
 
 class ReservationApiView(ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializers
+    permission_classes = [IsAuthenticated,DjangoModelPermissions]
 
-class TicketApiView(ModelViewSet):
-    queryset = Tickets.objects.all()
-    serializer_class = TicketSerializers 
+
 
 # class PaymentApiView(ModelViewSet):
 #     queryset = Payment.objects.all()
@@ -102,7 +110,7 @@ class ReviewApiView(ModelViewSet):
 
 
 @api_view(['GET'])
-def EventCost(request, event_id):
+def RevenueReport(request, event_id):
     # def get(self, request, event_id):
     event = Events.objects.get(pk=event_id)
     venuecost = event.venue_cost 
@@ -113,6 +121,7 @@ def EventCost(request, event_id):
         Equipment.objects.filter(event=event).aggregate(total_logistic_cost=models.Sum('cost'))['total_logistic_cost'] +
         Transportation.objects.filter(event=event).aggregate(total_logistic_cost=models.Sum('cost'))['total_logistic_cost'] 
     )
+    total_revenue_from_tickets = (Tickets.objects.filter(event=event).aggregate(total_revenue_from_tickets=models.Sum('payment_amount'))['total_revenue_from_tickets'])
     total_event_cost = venuecost + cost_based_on_attendees + total_logistic_cost
     
     return Response({
@@ -121,32 +130,56 @@ def EventCost(request, event_id):
         "Total Food Cost": cost_based_on_attendees,
         "Venue Cost":venuecost,
         "Total Logistic Cost": total_logistic_cost,
+        "Total Revenue Generated From Ticket sales": total_revenue_from_tickets,
         "Total Event Cost":total_event_cost
         })
 
+class TicketApiView(ModelViewSet):
+    queryset = Tickets.objects.all()
+    serializer_class = TicketSerializers 
+    permission_classes = [IsAuthenticated,DjangoModelPermissions]
+
 class PaymentView(APIView):
     def post(self, request):
-        stripe.api_key = settings.STRIPE_SECRET_KEY  # Use the test secret key for now
-
         try:
-            # Retrieve the payment amount from the request (assuming JSON input)
+            # Retrieve data from the request
             payment_amount = request.data.get('payment_amount')
             ticket_no = request.data.get('ticket_no')
-            event = request.data.get('event')
-            attendee = request.data.get('attendee')
+            event_id = request.data.get('event')
+            attendee_id = request.data.get('attendee')
             payment_date = request.data.get('payment_date')
             payment_method = request.data.get('payment_method')
+            stripe_token = request.data.get('stripe_token')
+
+            # Retrieve Event and Attendee instances
+            event = Events.objects.get(id=event_id)
+            attendee = Attendees.objects.get(id=attendee_id)
+
+            metadata = {
+                'event_id': str(event.id),
+                'attendee_id': str(attendee.id),
+                'attendee_name': attendee.name,
+                'event_name': event.name, 
+            }
+
             # Create a charge using the Stripe API
             charge = stripe.Charge.create(
-                amount=int(payment_amount * 100),  # Stripe uses cents
-                currency='usd',
-                source=request.data.get('stripe_token'),  # Stripe token obtained from the frontend
-                description='Payment for ticket'
+                amount=int(payment_amount * 100),
+                currency='npr',
+                source=stripe_token,
+                description='Payment for ticket',
+                metadata=metadata
             )
             
-            # Optionally, update your ticket model or any other logic
-            # For example, save the payment information to your Ticket model
-            ticket = Tickets.objects.create(payment_amount=payment_amount,ticket_no=ticket_no,event=event,attendee=attendee,payment_date=payment_date,payment_method=payment_method)
+            
+            ticket = Tickets.objects.create(
+                payment_amount=payment_amount,
+                ticket_no=ticket_no,
+                event=event,
+                attendee=attendee,
+                payment_date=payment_date,
+                payment_method=payment_method
+            )
             
             # Return a success response
             return Response({'message': 'Payment successful'})
@@ -157,6 +190,86 @@ class PaymentView(APIView):
             err = body.get('error', {})
             return Response({'error': err.get('message')}, status=status.HTTP_400_BAD_REQUEST)
         
+        except Events.DoesNotExist:
+            return Response({'error': 'Event does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Attendees.DoesNotExist:
+            return Response({'error': 'Attendee does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
         except Exception as e:
             # Something else happened, completely unrelated to Stripe
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+# class KhaltiPaymentView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         token = request.data.get('token')
+#         amount = request.data.get('amount')  # amount in paisa
+#         ticket_id = request.data.get('ticket_id')
+
+#         # Validate token length
+#         if not token or len(token) != 22:
+#             return Response({'error': 'Invalid token length. Ensure this field has exactly 22 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Verify payment with Khalti
+#         url = "https://khalti.com/api/v2/payment/verify/"
+#         payload = {
+#             'token': token,
+#             'amount': amount
+#         }
+#         headers = {
+#             'Authorization': f'Key {settings.KHALTI_SECRET_KEY}'
+#         }
+#         response = requests.post(url, data=payload, headers=headers)
+#         resp_json = response.json()
+
+#         if response.status_code == 200:
+#             try:
+#                 ticket = Tickets.objects.get(id=ticket_id)
+#                 ticket.payment_status = 'completed'
+#                 ticket.khalti_token = token
+#                 ticket.amount = amount
+#                 ticket.save()
+#                 return Response({'status': 'Payment successful'}, status=status.HTTP_200_OK)
+#             except Tickets.DoesNotExist:
+#                 return Response({'error': 'Ticket not found'}, status=status.HTTP_404_NOT_FOUND)
+#         else:
+#             # Log the response from Khalti for debugging
+#             print(f"Verification failed: {resp_json}")
+#             return Response({'error': 'Payment verification failed', 'detail': resp_json}, status=status.HTTP_400_BAD_REQUEST)
+
+# class PaymentView(APIView):
+#     def post(self, request):
+#         stripe.api_key = settings.STRIPE_SECRET_KEY  # Use the test secret key for now
+
+#         try:
+#             # Retrieve the payment amount from the request (assuming JSON input)
+#             payment_amount = request.data.get('payment_amount')
+#             ticket_no = request.data.get('ticket_no')
+#             event = request.data.get('event')
+#             attendee = request.data.get('attendee')
+#             payment_date = request.data.get('payment_date')
+#             payment_method = request.data.get('payment_method')
+#             # Create a charge using the Stripe API
+#             charge = stripe.Charge.create(
+#                 amount=int(payment_amount * 100),  # Stripe uses cents
+#                 currency='usd',
+#                 source=request.data.get('stripe_token'),  # Stripe token obtained from the frontend
+#                 description='Payment for ticket'
+#             )
+            
+#             # Optionally, update your ticket model or any other logic
+#             # For example, save the payment information to your Ticket model
+#             ticket = Tickets.objects.create(payment_amount=payment_amount,ticket_no=ticket_no,event=event,attendee=attendee,payment_date=payment_date,payment_method=payment_method)
+            
+#             # Return a success response
+#             return Response({'message': 'Payment successful'})
+
+#         except stripe.error.CardError as e:
+#             # Since it's a decline, stripe.error.CardError will be caught
+#             body = e.json_body
+#             err = body.get('error', {})
+#             return Response({'error': err.get('message')}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         except Exception as e:
+#             # Something else happened, completely unrelated to Stripe
+#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
