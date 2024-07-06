@@ -53,7 +53,7 @@ __Setup__
   python manage.py createsuperuser
 ```
 __Run Server__
-Start development server
+- Start development server
 ```bash
   python manage.py runserver
 ```
