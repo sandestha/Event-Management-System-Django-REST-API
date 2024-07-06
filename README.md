@@ -12,6 +12,7 @@ This is a REST API for a event management system built using Django REST Framewo
 - Filter Events by Event Categories
 - Different permission levels for Event Organizers, Event Clients, Vendors and Attendees
 - Reviews / Feedback for events by Attendees
+- STRIPE Payment Integration
 
 ## Color Reference
 
@@ -23,6 +24,8 @@ This is a REST API for a event management system built using Django REST Framewo
 | logout/ | Logout user |
 | Events/ | Retrieve list of events, search using ?search=, filter using ?category= |
 | Events/<id>| Retrieve, update or delete a book|
+| process_payment| Process Payment via Stripe Payment and details are stored in database|
+| revenuereport/<id>| Total reports according to events that shows no of attendees, total logistic charges, Ticket sales, etc|
 
 
 ## Deployment
