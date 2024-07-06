@@ -22,8 +22,14 @@ This is a REST API for a event management system built using Django REST Framewo
 | register/   |  Sign up new user |
 | login/ | Login user and retrieve Django Auth token|
 | logout/ | Logout user |
-| Events/ | Retrieve list of events, search using ?search=, filter using ?category= |
-| Events/<id>| Retrieve, update or delete a book|
+| events/ | Retrieve list of events, search using ?search=, filter using ?category= |
+| events/<id>| Retrieve, update or delete a book|
+| venue| Retrievelist if venue|
+| venue/<id>| Retrieve, update or delete a venue|
+| attendees| Retrieve list of attendees|
+| attendees/<id>| Retrieve, update or delete a attendees|
+| feedback| Retrieve list of reviews done by attendees|
+| feedback/<id>| Retrieve, update or delete a reviews|
 | process_payment| Process Payment via Stripe Payment and details are stored in database|
 | revenuereport/<id>| Total reports according to events that shows no of attendees, total logistic charges, Ticket sales, etc|
 
