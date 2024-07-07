@@ -30,7 +30,7 @@ This is a REST API for a event management system built using Django REST Framewo
 | attendees/<id>| Retrieve, update or delete a attendees|
 | feedback| Retrieve list of reviews done by attendees|
 | feedback/<id>| Retrieve, update or delete a reviews|
-| process_payment| Process Payment via Stripe Payment and details are stored in database|
+| process_payment| Process Payment via Stripe Payment and details are stored in Ticket model|
 | revenuereport/<id>| Total reports according to events that shows no of attendees, total logistic charges, Ticket sales, etc|
 
 
