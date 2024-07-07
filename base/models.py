@@ -136,5 +136,5 @@ class Reviews(models.Model):
             verbose_name_plural = 'Reviews'
 
         def __str__(self):
-            return f'{self.event}'
+            return f'{self.reviewer}{' --> '}{self.event}'
         

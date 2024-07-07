@@ -29,8 +29,7 @@ def LogisticTotal(request, event_id):
         Equipment.objects.filter(event=event).aggregate(total_cost=models.Sum('cost'))['total_cost'] +
         Transportation.objects.filter(event=event).aggregate(total_cost=models.Sum('cost'))['total_cost'] 
     )
-    return Response(total_cost)
-        # return Response({"event_id":event_id, "TotaL_Logistic_Cost":total_cost})
+    return Response({"Event Name":event.name, "TotaL Logistic Cost":total_cost})
 
 # @api_view(['GET'])
 # def Report(request,event_id):

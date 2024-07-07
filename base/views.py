@@ -64,7 +64,7 @@ def GroupListing(request):
 class UserApiView(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializers
-    permission_classes = [DjangoModelPermissions]
+    permission_classes = [IsAuthenticated,DjangoModelPermissions]
 
 class CategoryApiView(ModelViewSet):
     queryset = Category.objects.all()
@@ -200,76 +200,3 @@ class PaymentView(APIView):
             # Something else happened, completely unrelated to Stripe
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-# class KhaltiPaymentView(APIView):
-#     def post(self, request, *args, **kwargs):
-#         token = request.data.get('token')
-#         amount = request.data.get('amount')  # amount in paisa
-#         ticket_id = request.data.get('ticket_id')
-
-#         # Validate token length
-#         if not token or len(token) != 22:
-#             return Response({'error': 'Invalid token length. Ensure this field has exactly 22 characters.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Verify payment with Khalti
-#         url = "https://khalti.com/api/v2/payment/verify/"
-#         payload = {
-#             'token': token,
-#             'amount': amount
-#         }
-#         headers = {
-#             'Authorization': f'Key {settings.KHALTI_SECRET_KEY}'
-#         }
-#         response = requests.post(url, data=payload, headers=headers)
-#         resp_json = response.json()
-
-#         if response.status_code == 200:
-#             try:
-#                 ticket = Tickets.objects.get(id=ticket_id)
-#                 ticket.payment_status = 'completed'
-#                 ticket.khalti_token = token
-#                 ticket.amount = amount
-#                 ticket.save()
-#                 return Response({'status': 'Payment successful'}, status=status.HTTP_200_OK)
-#             except Tickets.DoesNotExist:
-#                 return Response({'error': 'Ticket not found'}, status=status.HTTP_404_NOT_FOUND)
-#         else:
-#             # Log the response from Khalti for debugging
-#             print(f"Verification failed: {resp_json}")
-#             return Response({'error': 'Payment verification failed', 'detail': resp_json}, status=status.HTTP_400_BAD_REQUEST)
-
-# class PaymentView(APIView):
-#     def post(self, request):
-#         stripe.api_key = settings.STRIPE_SECRET_KEY  # Use the test secret key for now
-
-#         try:
-#             # Retrieve the payment amount from the request (assuming JSON input)
-#             payment_amount = request.data.get('payment_amount')
-#             ticket_no = request.data.get('ticket_no')
-#             event = request.data.get('event')
-#             attendee = request.data.get('attendee')
-#             payment_date = request.data.get('payment_date')
-#             payment_method = request.data.get('payment_method')
-#             # Create a charge using the Stripe API
-#             charge = stripe.Charge.create(
-#                 amount=int(payment_amount * 100),  # Stripe uses cents
-#                 currency='usd',
-#                 source=request.data.get('stripe_token'),  # Stripe token obtained from the frontend
-#                 description='Payment for ticket'
-#             )
-            
-#             # Optionally, update your ticket model or any other logic
-#             # For example, save the payment information to your Ticket model
-#             ticket = Tickets.objects.create(payment_amount=payment_amount,ticket_no=ticket_no,event=event,attendee=attendee,payment_date=payment_date,payment_method=payment_method)
-            
-#             # Return a success response
-#             return Response({'message': 'Payment successful'})
-
-#         except stripe.error.CardError as e:
-#             # Since it's a decline, stripe.error.CardError will be caught
-#             body = e.json_body
-#             err = body.get('error', {})
-#             return Response({'error': err.get('message')}, status=status.HTTP_400_BAD_REQUEST)
-        
-#         except Exception as e:
-#             # Something else happened, completely unrelated to Stripe
-#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
